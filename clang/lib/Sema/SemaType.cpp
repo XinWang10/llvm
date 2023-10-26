@@ -2720,6 +2720,7 @@ QualType Sema::BuildArrayType(QualType T, ArrayType::ArraySizeModifier ASM,
     }
   }
 
+<<<<<<< HEAD
   // Delay diagnostic to SemaSYCL so only Kernel functions are diagnosed.
   if (T->isVariableArrayType() && !Context.getTargetInfo().isVLASupported() &&
       !getLangOpts().SYCLIsDevice) {
@@ -2728,6 +2729,20 @@ QualType Sema::BuildArrayType(QualType T, ArrayType::ArraySizeModifier ASM,
     targetDiag(Loc,
                IsCUDADevice ? diag::err_cuda_vla : diag::err_vla_unsupported)
         << (IsCUDADevice ? CurrentCUDATarget() : 0);
+=======
+  if (T->isVariableArrayType()) {
+    if (!Context.getTargetInfo().isVLASupported()) {
+      // CUDA device code and some other targets don't support VLAs.
+      bool IsCUDADevice = (getLangOpts().CUDA && getLangOpts().CUDAIsDevice);
+      targetDiag(Loc,
+                 IsCUDADevice ? diag::err_cuda_vla : diag::err_vla_unsupported)
+          << (IsCUDADevice ? CurrentCUDATarget() : 0);
+    } else if (sema::FunctionScopeInfo *FSI = getCurFunction()) {
+      // VLAs are supported on this target, but we may need to do delayed
+      // checking that the VLA is not being used within a coroutine.
+      FSI->setHasVLA(Loc);
+    }
+>>>>>>> 09e8ef975d9970560b893f79ec283f69ea8db953
   }
 
   // If this is not C99, diagnose array size modifiers on non-VLAs.
